@@ -1,0 +1,42 @@
+.hrLine {
+    position: fixed;
+    background-color: red;
+    width: 100%;
+    top: 100px;
+    height: 2px;
+    z-index: 1000;
+}
+
+a.deleteBtn {
+    border-right-width: 2px;
+    /*border-right-color: black;
+    border-right-style: solid;*/
+    margin-right: 2px;
+    padding-right: 3px;
+    padding-left: 6px;
+    float: left;
+    display: none;
+    color: black;
+    font-style: normal;
+    font-family: monospace;
+}
+
+a.markBtn {
+    width: 80px;
+    height: 20px;
+    padding-left: 2px;
+    color: black;
+    font-style: normal;
+    font-family: monospace;
+}
+
+.markBody {
+    position: fixed;
+    right: 0%;
+    width: 78px;
+    height: 20px;
+    z-index: 1000;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: right center;
+}

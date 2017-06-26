@@ -1,0 +1,24 @@
+{
+    "manifest_version": 2,
+    "name": "PageMark",
+    "description": "Simple extension for easier scrolling or continue where you left previously",
+    "version": "1.0",
+
+    "browser_action": {
+        "default_icon": "icon.png",
+        "default_popup": "popup.html"
+    },
+    "background": {
+        "scripts": ["background.js"]  
+    },
+    "content_scripts": [{
+        "matches": ["https://*/*", "http://*/*"],
+        "css": ["style.css"],
+        "js": ["content.js"],
+        "run_at": "document_idle"
+    }],
+    "web_accessible_resources": [
+        "Mark.png"
+    ],
+    "permissions": ["activeTab", "tabs", "https://*/*", "http://*/*", "storage"]
+}
