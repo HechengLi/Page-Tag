@@ -49,6 +49,7 @@ function addMark(id, mark) {
     deletebtn.classList.add('deleteBtn'); // load css
     deletebtn.addEventListener('click', function () {
         removeMark(id, mark);
+        beforePeekPosition = -2;
     });
     
     // go button
@@ -56,6 +57,8 @@ function addMark(id, mark) {
     gobtn.classList.add('markBtn'); // load css
     gobtn.addEventListener('click', function () {
         goToMark(newMark.mark);
+        beforePeekPosition = -2;
+        document.body.scrollTop = document.body.scrollTop+1;
     });
     gobtn.addEventListener('mouseover', function () {
         if (peek) {
@@ -65,7 +68,9 @@ function addMark(id, mark) {
     });
     gobtn.addEventListener('mouseout', function () {
         if (peek) {
-            goToMark(beforePeekPosition);
+            if (beforePeekPosition != -2) {
+                goToMark(beforePeekPosition);
+            }
             beforePeekPosition = -1;
         }
     })
@@ -217,7 +222,7 @@ function loadOptions() {
 
 // when scrolling through the webpage, change the positions of pagemarks
 window.onscroll = function () {
-    if (beforePeekPosition == -1) { // only run when not peeking to avoid infinite loop
+    if (beforePeekPosition < 0) { // only run when not peeking to avoid infinite loop
         for (var i = 0; i < marks.length; i++) {
             var markDiv = document.getElementById(marks[i].id); // get html element
             var markPos = marks[i].mark;
