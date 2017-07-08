@@ -1,7 +1,7 @@
 var markHeight = 20; // height of individual marks
 var marks = []; // array of all marks
 var topOffset = 0; // offset from 1st mark to top of webpage, unused
-var peek = false; // peek on hover or not
+var peek = true; // peek on hover or not
 var beforePeekPosition = -1; // remember position before peeking
 
 // structure of a pagemark
@@ -41,8 +41,8 @@ function addMark(id, mark) {
     
     // create html elements
     var markdiv = document.createElement('div');
-    var gobtn = document.createElement('a');
-    var deletebtn = document.createElement('a');
+    var gobtn = document.createElement('button');
+    var deletebtn = document.createElement('button');
     
     // delete button (hidden by default)
     deletebtn.innerHTML = 'x';

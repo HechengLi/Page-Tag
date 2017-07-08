@@ -30,6 +30,31 @@ a.markBtn {
     font-family: monospace;
 }
 
+button {
+    background-color: Transparent;
+    background-repeat: no-repeat;
+    border: none;
+    cursor: pointer;
+    overflow: hidden;
+    outline: none;
+    color: black;
+    font-style: normal;
+    font-family: monospace;
+}
+
+button.deleteBtn {
+    width: 17px;
+    height: 20px;
+    float: left;
+    display: none;
+}
+
+button.markBtn {
+    margin-top: 1px;
+    width: 60px;
+    height: 18px;
+}
+
 .markBody {
     position: fixed;
     right: 0%;
