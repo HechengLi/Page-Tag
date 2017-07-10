@@ -6,6 +6,8 @@ var beforePeekPosition = -1; // remember position before peeking
 var autoHide = true; // hide or not
 var speed = 5; // expand&shrink speed
 var minimizedSize = 20; // size of tag after shrinked
+var instantScroll = false; // instant scroll or not
+var slowInterval = null; // interval used for non instant scrolling
 
 // structure of a pagemark
 function PageMark(id, mark) {
@@ -63,21 +65,59 @@ function addMark(id, mark) {
         beforePeekPosition = -2;
         document.body.scrollTop = document.body.scrollTop+1;
     });
-    gobtn.addEventListener('mouseover', function () {
-        if (peek) {
-            beforePeekPosition = document.body.scrollTop;
-            goToMark(newMark.mark);
-        }
-    });
-    gobtn.addEventListener('mouseout', function () {
-        if (peek) {
-            if (beforePeekPosition != -2) {
-                goToMark(beforePeekPosition);
-            }
-            beforePeekPosition = -1;
-        }
-    })
     
+    if (!instantScroll) { // if instant scroll is off
+        if (peek) { // if peek is enabled
+            gobtn.addEventListener('mouseover', function () {
+                if (beforePeekPosition < 0) { // this means it's not currently peeking or finished peaking
+                    beforePeekPosition = document.body.scrollTop; // remember where peaking started
+                    if (beforePeekPosition <= 0) { // if before peeking position is 0 it can cause unexpected bahaviour
+                        beforePeekPosition = 1;
+                    }
+                }
+                var diff = (newMark.mark - document.body.scrollTop)/50; // this is how much it will scroll every interval
+                clearInterval(slowInterval); // stop current interval before starting new interval
+                slowInterval = setInterval(slowFrame1, 3); // start a new interval
+                function slowFrame1() { // this is the scrolling function
+                    if (Math.abs(document.body.scrollTop - newMark.mark) <= Math.abs(diff)) { // if its very close to destination
+                        clearInterval(slowInterval); // stop scrolling
+                        document.body.scrollTop = newMark.mark; // set scroll to destination
+                    } else {
+                        document.body.scrollTop = document.body.scrollTop + diff; // scrolling
+                    }
+                }
+            });
+            gobtn.addEventListener('mouseout', function () {
+                if (beforePeekPosition != -2) { // This means mouse left without clicking
+                    var diff = (beforePeekPosition - document.body.scrollTop)/50; // this is how much it will scroll every interval
+                    clearInterval(slowInterval); // stop current interval before starting new interval
+                    slowInterval = setInterval(slowFrame2, 3); // start a new interval
+                    function slowFrame2() { // this is the scrolling function
+                        if (Math.abs(document.body.scrollTop - beforePeekPosition) <= Math.abs(diff)) { // if its very close to destination
+                            clearInterval(slowInterval); // stop scrolling
+                            document.body.scrollTop = beforePeekPosition; // set scroll to destination
+                            beforePeekPosition = -1; // peek finished
+                        } else {
+                            document.body.scrollTop = document.body.scrollTop + diff; // scroll
+                        }
+                    }
+                }
+            });
+        }
+    } else {
+        if (peek) {
+            gobtn.addEventListener('mouseover', function () {
+                beforePeekPosition = document.body.scrollTop;
+                goToMark(newMark.mark);
+            });
+            gobtn.addEventListener('mouseout', function () {    
+                if (beforePeekPosition != -2) {
+                    goToMark(beforePeekPosition);
+                }
+                beforePeekPosition = -1;
+            });
+        }
+    }
     // container for delete and go buttons
     markdiv.id = newMark.id;
     markdiv.classList.add('markBody'); // load css
@@ -282,6 +322,9 @@ function loadOptions() {
     chrome.storage.sync.get("hidebox", function(item) {
         autoHide = item["hidebox"];
     });
+    chrome.storage.sync.get("scrollbox", function(item) {
+        instantScroll = item["scrollbox"];
+    })
 }
 
 // when scrolling through the webpage, change the positions of pagemarks
@@ -301,3 +344,15 @@ window.onscroll = function () {
 // load marks and option when user opens a webpage
 loadMarks();
 loadOptions();
+
+/* This part is for debugging only
+var testWindow = document.createElement('div');
+testWindow.style.position = 'fixed';
+testWindow.innerHTML = '0';
+testWindow.style.left = '0%';
+testWindow.style.height = '30px';
+testWindow.style.width = '30px';
+testWindow.style.top = '50%';
+testWindow.style.backgroundColor = 'white';
+document.body.appendChild(testWindow);
+*/
