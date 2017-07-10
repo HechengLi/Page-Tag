@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "Page Tag",
     "description": "Simple extension for easier scrolling or continue where you left previously",
-    "version": "1.4",
+    "version": "1.5",
     "options_ui": {
         "page": "options.html",
         "chrome_style": true
