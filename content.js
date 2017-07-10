@@ -8,11 +8,13 @@ var speed = 5; // expand&shrink speed
 var minimizedSize = 20; // size of tag after shrinked
 var instantScroll = false; // instant scroll or not
 var slowInterval = null; // interval used for non instant scrolling
+var absolutePosition = false;
 
 // structure of a pagemark
 function PageMark(id, mark) {
     this.id = id;
     this.mark = mark;
+    this.absoluteMark = 0;
     this.div;
 }
 
@@ -39,8 +41,9 @@ function removeMark(id, mark) {
 /*
 // add a new mark
 */
-function addMark(id, mark) {
+function addMark(id, mark, y) {
     var newMark = new PageMark(id, mark); // initialize new mark
+    newMark.absoluteMark = y;
     marks.push(newMark); // add to marks array
     marks = quicksort(marks, 0, marks.length-1); // sort the current marks array from low to high
     
@@ -61,9 +64,14 @@ function addMark(id, mark) {
     gobtn.innerHTML = newMark.id;
     gobtn.classList.add('markBtn'); // load css
     gobtn.addEventListener('click', function () {
-        goToMark(newMark.mark);
+        var target = newMark.mark;
+        if (absolutePosition) {
+            target = newMark.absoluteMark;
+        }
+        goToMark(target);
         beforePeekPosition = -2;
-        document.body.scrollTop = document.body.scrollTop+1;
+        document.body.scrollTop = document.body.scrollTop+1; // this is to trigger tags movement
+        document.body.scrollTop = document.body.scrollTop-1;
     });
     
     if (!instantScroll) { // if instant scroll is off
@@ -75,13 +83,17 @@ function addMark(id, mark) {
                         beforePeekPosition = 1;
                     }
                 }
-                var diff = (newMark.mark - document.body.scrollTop)/50; // this is how much it will scroll every interval
+                var target = newMark.mark;
+                if (absolutePosition) {
+                    target = newMark.absoluteMark;
+                }
+                var diff = (target - document.body.scrollTop)/50; // this is how much it will scroll every interval
                 clearInterval(slowInterval); // stop current interval before starting new interval
                 slowInterval = setInterval(slowFrame1, 3); // start a new interval
                 function slowFrame1() { // this is the scrolling function
-                    if (Math.abs(document.body.scrollTop - newMark.mark) <= Math.abs(diff)) { // if its very close to destination
+                    if (Math.abs(document.body.scrollTop - target) <= Math.abs(diff)) { // if its very close to destination
                         clearInterval(slowInterval); // stop scrolling
-                        document.body.scrollTop = newMark.mark; // set scroll to destination
+                        document.body.scrollTop = target; // set scroll to destination
                     } else {
                         document.body.scrollTop = document.body.scrollTop + diff; // scrolling
                     }
@@ -108,7 +120,11 @@ function addMark(id, mark) {
         if (peek) {
             gobtn.addEventListener('mouseover', function () {
                 beforePeekPosition = document.body.scrollTop;
-                goToMark(newMark.mark);
+                var target = newMark.mark;
+                if (absolutePosition) {
+                    target = newMark.absoluteMark;
+                }
+                goToMark(target);
             });
             gobtn.addEventListener('mouseout', function () {    
                 if (beforePeekPosition != -2) {
@@ -202,7 +218,7 @@ function addSelector(id) {
     hbar.id = 'horizontal-selector';
     hbar.classList.add('hrLine'); // load css
     hbar.addEventListener('click', function () {
-        addMark(id, document.body.scrollTop + parseInt(hbar.style.top)); // proceed to add mark at clicked position
+        addMark(id, document.body.scrollTop + parseInt(hbar.style.top), document.body.scrollTop); // proceed to add mark at clicked position
         hbar.parentNode.removeChild(hbar); // remove selector
     });
     document.body.appendChild(hbar); // add to webpage
@@ -210,9 +226,10 @@ function addSelector(id) {
 
 // this part helps selector always follow mouse
 var drawLines = function (event) {
-    var y = event.pageY;
+    var y = event.pageY;    
     document.getElementById('horizontal-selector').style.top = (y - document.body.scrollTop).toString() + "px";
 }
+
 document.body.addEventListener('mousemove', function (event) {
     drawLines(event);
 });
@@ -298,7 +315,7 @@ function loadMarks() {
         chrome.storage.sync.get(urlid, function(item) {
             var m = item[urlid]; // get back marks array
             for (var i = 0; i < m.length; i++) {
-                addMark(m[i].id, m[i].mark); // add all marks
+                addMark(m[i].id, m[i].mark, m[i].absoluteMark); // add all marks
             }
             for (var i = 0; i < marks.length; i++) { // put all marks into correct position
                 var markDiv = document.getElementById(marks[i].id); // get html element
@@ -324,7 +341,10 @@ function loadOptions() {
     });
     chrome.storage.sync.get("scrollbox", function(item) {
         instantScroll = item["scrollbox"];
-    })
+    });
+    chrome.storage.sync.get("absolutebox", function(item) {
+        absolutePosition = item["absolutebox"];
+    });
 }
 
 // when scrolling through the webpage, change the positions of pagemarks
@@ -345,7 +365,7 @@ window.onscroll = function () {
 loadMarks();
 loadOptions();
 
-/* This part is for debugging only
+// This part is for debugging only
 var testWindow = document.createElement('div');
 testWindow.style.position = 'fixed';
 testWindow.innerHTML = '0';
@@ -355,4 +375,3 @@ testWindow.style.width = '30px';
 testWindow.style.top = '50%';
 testWindow.style.backgroundColor = 'white';
 document.body.appendChild(testWindow);
-*/
