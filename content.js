@@ -3,6 +3,9 @@ var marks = []; // array of all marks
 var topOffset = 0; // offset from 1st mark to top of webpage, unused
 var peek = true; // peek on hover or not
 var beforePeekPosition = -1; // remember position before peeking
+var autoHide = true; // hide or not
+var speed = 5; // expand&shrink speed
+var minimizedSize = 20; // size of tag after shrinked
 
 // structure of a pagemark
 function PageMark(id, mark) {
@@ -82,8 +85,66 @@ function addMark(id, mark) {
     markdiv.style.top = pos.toString() + 'px';
     var markImgUrl = chrome.extension.getURL('icon/Mark.png'); // add background image
     markdiv.style.backgroundImage = 'url(' + markImgUrl + ')';
-    markdiv.onmouseover = function() {deletebtn.style.display = 'block'; markdiv.style.width = '95px';} // show delete button
-    markdiv.onmouseout = function() {deletebtn.style.display = 'none'; markdiv.style.width = '78px';} // hide delete button
+    if (autoHide) { // autohide mode (tag will minimize)
+        var interval1 = null; // interval for expand
+        var interval2 = null; // interval for shrink
+        markdiv.onmouseover = function() { // show delete button
+            clearInterval(interval2); // clear shrink interval
+            interval2 = null; // this is to avoid shrink and expand at the sametime
+            var pos = parseInt(markdiv.style.width);
+            if (interval1 == null) { // check if tag is already expanding
+                interval1 = setInterval(frame1, speed); // start expanding
+            }
+            function frame1() { // expand function
+                if (pos >= 78) { // expand until 78px, then add delete button
+                    clearInterval(interval1); // clear expand interval upon finish
+                    interval1 = null;
+                    markdiv.style.width = '95px'; // make room for delete button
+                    markdiv.style.backgroundPosition = "0px"; // fix background image position
+                    deletebtn.style.display = 'block'; // add delete button
+                } else {
+                    pos++; // expand
+                    markdiv.style.width = pos.toString() + 'px';
+                }
+            }
+        }
+        markdiv.onmouseout = function() { // hide delete button
+            clearInterval(interval1); // clear expand interval
+            interval1 = null; // this is to avoid shrink and expand at the sametime
+            var pos = parseInt(markdiv.style.width);
+            if (interval2 == null) { // check if interval is already shrinking
+                interval2 = setInterval(frame2, speed); // start shrinking
+            }
+            function frame2() { // shrink function
+                if (pos <= minimizedSize) { // shrink until minimum threshold
+                    clearInterval(interval2); // clear shrink interval when minimum threshold reached
+                    interval2 = null;
+                } else {
+                    pos--; // shrink
+                    markdiv.style.width = pos.toString() + 'px';
+                    if (pos == 94) { // sometimes when moving between buttons causes a shrink and unexpected behaviour, this fixes the problem 
+                        markdiv.style.backgroundPosition = "-17px"; // fix background image position
+                        deletebtn.style.display = 'none'; // hide delete button
+                        pos = pos - 17; // shrink the size of a delete button
+                        markdiv.style.width = pos.toString() + 'px';
+                    }
+                }
+            }
+        }
+        markdiv.style.backgroundPosition = '-17px';
+        markdiv.style.width = minimizedSize.toString() + 'px';
+    } else {
+        markdiv.onmouseover = function() { // show delete button
+            markdiv.style.width = '95px';
+            markdiv.style.backgroundPosition = "0px";
+            deletebtn.style.display = 'block';
+        }
+        markdiv.onmouseout = function() { // hide delete button
+            deletebtn.style.display = 'none'; 
+            markdiv.style.width = '78px';
+            markdiv.style.backgroundPosition = "-17px";
+        }
+    }
     markdiv.appendChild(deletebtn);
     markdiv.appendChild(gobtn);
     
@@ -217,6 +278,9 @@ function loadMarks() {
 function loadOptions() {
     chrome.storage.sync.get("peekbox", function(item) {
         peek = item["peekbox"];
+    });
+    chrome.storage.sync.get("hidebox", function(item) {
+        autoHide = item["hidebox"];
     });
 }
 
